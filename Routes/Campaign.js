@@ -86,7 +86,7 @@ campaignRouter.post(
       const uploadResult = await Promise.all(
         files.map(async (file) => {
           try {
-            const result = await cloudUpload(file.path, {
+            const result = await cloudUpload(file.buffer, {
               folder: "campaigns",
             });
             return result.secure_url;
