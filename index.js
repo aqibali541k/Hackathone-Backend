@@ -16,18 +16,16 @@ app.use(
 );
 app.use(express.json());
 
-const connectDB = async () => {
-  await mongoose
-    .connect(MONGODB_URL)
-    .then((res) => {
-      console.log("MongoDB connected successfully");
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-};
-
-connectDB();
+let isConnected = false;
+async function connectDB() {
+  try {
+    await mongoose.connect(MONGODB_URL);
+    isConnected = true;
+  } catch (e) {
+    console.log(e);
+    isConnected = false;
+  }
+}
 
 // Routes
 
@@ -40,6 +38,13 @@ app.get("/", (req, res) => {
   res.send("server is online");
 });
 
-app.listen(port, () => {
-  console.log(`Your server is online at http://localhost:${port}`);
+app.use((req, res, next) => {
+  if (!isConnected) {
+    connectDB();
+  }
+  next();
 });
+// app.listen(port, () => {
+//   console.log(`Your server is online at http://localhost:${port}`);
+// });
+module.exports = app;
