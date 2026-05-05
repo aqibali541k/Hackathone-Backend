@@ -9,6 +9,7 @@ const authRouter = require("./Routes/User");
 const campaignRouter = require("./Routes/Campaign");
 const donationRouter = require("./Routes/Donation");
 const analyticsRouter = require("./Routes/Analytics");
+const contactRouter = require("./Routes/Contact");
 
 app.use(cors({ origin: "*" }));
 app.use(express.json());
@@ -20,6 +21,8 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
+const dns = require("node:dns");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 async function connectDB() {
   if (cached.conn) return cached.conn;
 
@@ -35,16 +38,23 @@ async function connectDB() {
 }
 
 // CONNECT DB IMMEDIATELY
-connectDB();
+connectDB().catch((err) => console.error("❌ MongoDB connection failed:", err));
 
 /* ---------------- ROUTES ---------------- */
 app.use("/users", authRouter);
 app.use("/campaigns", campaignRouter);
 app.use("/donations", donationRouter);
 app.use("/analytics", analyticsRouter);
+app.use("/contact", contactRouter);
 
 app.get("/", (req, res) => {
   res.send("server is online");
+});
+
+/* ---------------- START SERVER ---------------- */
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
 module.exports = app;

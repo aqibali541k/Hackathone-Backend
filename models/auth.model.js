@@ -6,7 +6,8 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   dob: { type: Date, required: true },
-  role: { type: String, enum: ["ngo", "donor"], default: "donor" },
+  role: { type: String, enum: ["ngo", "donor", "admin"], default: "donor" },
+  avatar: { type: String },
   resetToken: { type: String },
   tokenExpire: { type: Date }
 }, { timestamps: true });

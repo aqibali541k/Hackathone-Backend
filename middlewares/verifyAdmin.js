@@ -1,26 +1,14 @@
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
-const { JWT_KEY } = process.env;
-
+// Simplified admin middleware — runs AFTER verifyToken, so req.user already exists
 const verifyAdmin = (req, res, next) => {
-    const authHeader = req.headers.authorization;
+  if (!req.user) {
+    return res.status(401).json({ msg: "Not authenticated" });
+  }
 
-    if (!authHeader) return res.status(401).json({ msg: "No token provided" });
+  if (req.user.role !== "ngo") {
+    return res.status(403).json({ msg: "Access denied, NGO only" });
+  }
 
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ msg: "Token missing" });
-
-    jwt.verify(token, JWT_KEY, (err, decoded) => {
-        if (err) return res.status(403).json({ msg: "Invalid token" });
-
-        // Check if user role is admin
-        if (decoded.role !== "ngo") {
-            return res.status(403).json({ msg: "Access denied, ngo only" });
-        }
-
-        req.user = decoded; // Attach user info
-        next();
-    });
+  next();
 };
 
 module.exports = verifyAdmin;

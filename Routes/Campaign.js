@@ -80,9 +80,9 @@ campaignRouter.post(
       }
 
       // ✅ Upload images to Cloudinary using buffer
-      const uploadedImages = await Promise.all(
-        req.files.map((file) => uploadFromBuffer(file.buffer)),
-      );
+      const uploadedImages = req.files && req.files.length > 0
+        ? await Promise.all(req.files.map((file) => uploadFromBuffer(file.buffer)))
+        : [];
 
       const campaign = await Campaign.create({
         title,
@@ -111,6 +111,7 @@ campaignRouter.put(
   "/update/:id",
   authMiddleware,
   adminMiddleware,
+  upload.array("images"),
   async (req, res) => {
     try {
       const campaign = await Campaign.findById(req.params.id);
@@ -122,7 +123,32 @@ campaignRouter.put(
         return res.status(403).json({ message: "Not authorized" });
       }
 
-      Object.assign(campaign, req.body);
+      // Parse existing images sent by frontend
+      let existingImages = [];
+      if (req.body.existingImages) {
+        existingImages = JSON.parse(req.body.existingImages);
+      }
+
+      // Upload new images to Cloudinary
+      const uploadedImages = req.files && req.files.length > 0
+        ? await Promise.all(req.files.map((file) => uploadFromBuffer(file.buffer)))
+        : [];
+
+      // Combine both
+      const finalImages = [...existingImages, ...uploadedImages];
+
+      // Update fields
+      const { title, description, goalAmount, category, startDate, endDate } = req.body;
+      
+      campaign.title = title || campaign.title;
+      campaign.description = description || campaign.description;
+      campaign.goalAmount = goalAmount || campaign.goalAmount;
+      campaign.category = category || campaign.category;
+      if (startDate) campaign.startDate = startDate;
+      if (endDate) campaign.endDate = endDate;
+      
+      campaign.images = finalImages;
+
       await campaign.save();
 
       res.status(200).json({

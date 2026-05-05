@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/auth.model");
 const verifyToken = require("../middlewares/token/verifyToken");
+const upload = require("../middlewares/upload");
+const { uploadFromBuffer } = require("../utils/cloudinary");
 
 const authRouter = express.Router();
 
@@ -97,7 +99,7 @@ authRouter.get("/profile", verifyToken, async (req, res) => {
 });
 
 // UPDATE PROFILE
-authRouter.put("/update", verifyToken, async (req, res) => {
+authRouter.put("/update", verifyToken, upload.single("avatar"), async (req, res) => {
   try {
     const { firstName, lastName, dob, email, password } = req.body;
     const updateData = {};
@@ -106,6 +108,12 @@ authRouter.put("/update", verifyToken, async (req, res) => {
     if (dob) updateData.dob = dob;
     if (email) updateData.email = email;
     if (password) updateData.password = await bcrypt.hash(password, 10);
+
+    // Validate and upload new avatar if exists
+    if (req.file) {
+      const avatarUrl = await uploadFromBuffer(req.file.buffer);
+      updateData.avatar = avatarUrl;
+    }
 
     const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, {
       new: true,
