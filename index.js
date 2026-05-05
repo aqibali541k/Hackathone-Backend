@@ -21,24 +21,42 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
-const dns = require("node:dns");
-dns.setServers(["8.8.8.8", "8.8.4.4"]);
 async function connectDB() {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+
     cached.promise = mongoose
-      .connect(process.env.MONGODB_URL)
-      .then((mongoose) => mongoose);
+      .connect(process.env.MONGODB_URL, opts)
+      .then((mongoose) => {
+        console.log("✅ MongoDB connected");
+        return mongoose;
+      });
   }
 
-  cached.conn = await cached.promise;
-  console.log("✅ MongoDB connected");
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
   return cached.conn;
 }
 
-// CONNECT DB IMMEDIATELY
-connectDB().catch((err) => console.error("❌ MongoDB connection failed:", err));
+// Ensure DB is connected for every request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("❌ MongoDB connection failed:", err.message);
+    res.status(500).json({ message: "Database connection failed" });
+  }
+});
 
 /* ---------------- ROUTES ---------------- */
 app.use("/users", authRouter);
@@ -48,13 +66,7 @@ app.use("/analytics", analyticsRouter);
 app.use("/contact", contactRouter);
 
 app.get("/", (req, res) => {
-  res.send("server is online");
-});
-
-/* ---------------- START SERVER ---------------- */
-// const PORT = process.env.PORT || 5000;
-app.get("/", (req, res) => {
-  res.send("🚀 Server is online");
+  res.send("🚀 Donation Hub Server is Online");
 });
 
 /* ---------- EXPORT (NO app.listen) ---------- */
