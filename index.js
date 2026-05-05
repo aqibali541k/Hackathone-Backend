@@ -66,7 +66,7 @@ app.use("/analytics", analyticsRouter);
 app.use("/contact", contactRouter);
 
 app.get("/", (req, res) => {
-  res.send("🚀 Donation Hub Server is Online");
+  res.send(" Donation Hub Server is Online");
 });
 
 /* ---------- EXPORT (NO app.listen) ---------- */
