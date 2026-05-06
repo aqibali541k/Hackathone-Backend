@@ -21,6 +21,8 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
+const dns = require("node:dns");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 async function connectDB() {
   if (cached.conn) return cached.conn;
 
@@ -69,5 +71,13 @@ app.get("/", (req, res) => {
   res.send(" Donation Hub Server is Online");
 });
 
-/* ---------- EXPORT (NO app.listen) ---------- */
+/* ---------- EXPORT & LISTEN ---------- */
+const PORT = process.env.PORT || 8000;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`✅ Server is running on http://localhost:${PORT}`);
+  });
+}
+
 module.exports = app;

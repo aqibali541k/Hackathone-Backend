@@ -128,14 +128,14 @@ campaignRouter.put(
 
       // Update fields
       const { title, description, goalAmount, category, startDate, endDate } = req.body;
-      
+
       campaign.title = title || campaign.title;
       campaign.description = description || campaign.description;
       campaign.goalAmount = goalAmount || campaign.goalAmount;
       campaign.category = category || campaign.category;
       if (startDate) campaign.startDate = startDate;
       if (endDate) campaign.endDate = endDate;
-      
+
       campaign.images = finalImages;
 
       await campaign.save();

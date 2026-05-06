@@ -1,48 +1,36 @@
 const cloudinary = require("cloudinary").v2;
-const path = require("path");
 
-// Ensure dotenv is loaded from the correct path relative to this file
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+// ✅ Load env FIRST (no custom path needed)
+require("dotenv").config();
 
-// Configuration will be attempted but we'll check dynamically in the function
-// to allow for environment variables to be set later or via process.env
-const configureCloudinary = () => {
-  const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env;
+// ✅ Configure Cloudinary once
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-  if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET) {
-    cloudinary.config({
-      cloud_name: CLOUDINARY_CLOUD_NAME,
-      api_key: CLOUDINARY_API_KEY,
-      api_secret: CLOUDINARY_API_SECRET,
-    });
-    return true;
-  }
-  return false;
-};
+// // ✅ Debug check (remove later if you want)
+// console.log("Cloudinary Config Check:");
+// console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
 
+// ✅ Upload function
 const uploadFromBuffer = (buffer, folder = "others") => {
   return new Promise((resolve, reject) => {
-    // Re-attempt config check in case variables were set after startup (e.g. in Vercel)
-    const isConfigured = configureCloudinary();
-
-    if (!isConfigured) {
-      console.error("❌ Cloudinary Config Missing. Available Env Keys:", Object.keys(process.env).filter(k => k.startsWith('CLOUDINARY')));
-      return reject(new Error("Cloudinary cloud_name is missing. If you are on Vercel, please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your project environment variables."));
+    if (!process.env.CLOUDINARY_CLOUD_NAME) {
+      return reject(new Error("❌ Cloudinary env variables not loaded"));
     }
 
     cloudinary.uploader
       .upload_stream({ folder }, (err, result) => {
         if (err) {
-          console.error("❌ Cloudinary Upload Stream Error:", err);
-          reject(err);
-        } else {
-          resolve(result.secure_url);
+          console.error("❌ Upload Error:", err);
+          return reject(err);
         }
+        resolve(result.secure_url);
       })
       .end(buffer);
   });
 };
-
-configureCloudinary();
 
 module.exports = { cloudinary, uploadFromBuffer };
