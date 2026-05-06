@@ -111,7 +111,7 @@ authRouter.put("/update", verifyToken, upload.single("avatar"), async (req, res)
 
     // Validate and upload new avatar if exists
     if (req.file) {
-      const avatarUrl = await uploadFromBuffer(req.file.buffer);
+      const avatarUrl = await uploadFromBuffer(req.file.buffer, "avatars");
       updateData.avatar = avatarUrl;
     }
 
@@ -121,10 +121,10 @@ authRouter.put("/update", verifyToken, upload.single("avatar"), async (req, res)
     res
       .status(200)
       .json({ message: "Profile updated successfully", user: updatedUser });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error updating profile" });
-  }
+    } catch (error) {
+      console.error("🔥 Update profile error:", error);
+      res.status(500).json({ message: error.message || "Server error updating profile" });
+    }
 });
 
 module.exports = authRouter;

@@ -3,21 +3,10 @@ const Campaign = require("../models/Campaign.model.js");
 const authMiddleware = require("../middlewares/token/verifyToken.js");
 const adminMiddleware = require("../middlewares/verifyAdmin.js");
 const upload = require("../middlewares/upload.js");
-const { cloudinary } = require("../utils/cloudinary.js");
+const { cloudinary, uploadFromBuffer } = require("../utils/cloudinary.js");
 
 const campaignRouter = express.Router();
 
-/* ---------------- CLOUDINARY BUFFER UPLOAD ---------------- */
-const uploadFromBuffer = (buffer) => {
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream({ folder: "campaigns" }, (err, result) => {
-        if (err) reject(err);
-        else resolve(result.secure_url);
-      })
-      .end(buffer);
-  });
-};
 
 /* ---------------- GET ALL CAMPAIGNS ---------------- */
 campaignRouter.get("/readall", async (req, res) => {
@@ -81,7 +70,7 @@ campaignRouter.post(
 
       // ✅ Upload images to Cloudinary using buffer
       const uploadedImages = req.files && req.files.length > 0
-        ? await Promise.all(req.files.map((file) => uploadFromBuffer(file.buffer)))
+        ? await Promise.all(req.files.map((file) => uploadFromBuffer(file.buffer, "campaigns")))
         : [];
 
       const campaign = await Campaign.create({
@@ -131,7 +120,7 @@ campaignRouter.put(
 
       // Upload new images to Cloudinary
       const uploadedImages = req.files && req.files.length > 0
-        ? await Promise.all(req.files.map((file) => uploadFromBuffer(file.buffer)))
+        ? await Promise.all(req.files.map((file) => uploadFromBuffer(file.buffer, "campaigns")))
         : [];
 
       // Combine both
